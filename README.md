@@ -35,13 +35,13 @@ If you prefer to install it manually from this repository:
 ## Usage
 
 - **Adding a Note:**
-    1. Click the icon in the top panel.
-    2. Enter your note in the input box that appears and press Enter.
-    3. Your note will be displayed in the top panel.
+  - Click the icon in the top panel.
+  - Enter your note in the input box that appears and press Enter.
+  - Your note will be displayed in the top panel.
 
 - **Clearing a Note:**
-    1. Click the icon in the top panel.
-    2. Click the clear button to remove the note.
+  - Click the icon in the top panel.
+  - Click the clear button to remove the note.
 
 ## Contributing
 
