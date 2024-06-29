@@ -2,16 +2,3 @@
     padding: 5px;
 }
 
-.note-scroll-view {
-    max-height: 200px; /* Adjust as needed */
-    min-width: 200px;  /* Adjust as needed */
-}
-
-.clear-button {
-    background-color: red; /* Adjust as needed */
-    color: white; /* Adjust as needed */
-    padding: 5px; /* Adjust as needed */
-    margin-left: 10px; /* Adjust as needed */
-}
-
-
