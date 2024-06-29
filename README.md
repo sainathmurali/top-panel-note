@@ -10,25 +10,25 @@ The Top Panel Note extension allows you to quickly add and view a static note fr
 
 ### From GNOME Extensions Website
 
-1. Navigate to the GNOME Extensions website: [Top Panel Note Extension](https://extensions.gnome.org/extension/).
-2. Turn on the extension to install it. 
+- Navigate to the GNOME Extensions website: [Top Panel Note Extension](https://extensions.gnome.org/extension/).
+- Turn on the extension to install it. 
 
 ### From GitHub Repository
 
 If you prefer to install it manually from this repository:
 
-1. Clone the repository and enter the directory:
+- Clone the repository and enter the directory:
    ```
    git clone https://github.com/sainathmurali/top-panel-note.git
    cd top-panel-note
    ```
    
-2. Install the extension:
+- Install the extension:
     ```
     make install
     ```
 
-3. Restart the GNOME Shell:
+- Restart the GNOME Shell:
    - Press `Alt+F2`.
    - Type `r` and press `Enter`.
 
