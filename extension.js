@@ -8,8 +8,6 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const cacheFilePath = `${GLib.get_user_cache_dir()}/top_panel_note_cache.txt`;
-
 const TopPanelNote = GObject.registerClass(
     class TopPanelNote extends PanelMenu.Button {
         _init() {
@@ -62,6 +60,10 @@ const TopPanelNote = GObject.registerClass(
             this.updateUI(); // Update UI based on loaded note
         }
 
+        _getCacheFilePath() {
+            return `${GLib.get_user_cache_dir()}/top_panel_note_cache.txt`;
+        }
+
         setNoteText(text) {
             this._noteText = text;
             this.updateUI();
@@ -82,14 +84,14 @@ const TopPanelNote = GObject.registerClass(
         }
 
         _storeNoteInStorage(text) {
-            let file = Gio.File.new_for_path(cacheFilePath);
+            let file = Gio.File.new_for_path(this._getCacheFilePath());
             let outputStream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
             outputStream.write_all(text + '\n', null);
             outputStream.close(null);
         }
 
         _loadNoteFromStorage() {
-            let file = Gio.File.new_for_path(cacheFilePath);
+            let file = Gio.File.new_for_path(this._getCacheFilePath());
             if (file.query_exists(null)) {
                 file.load_contents_async(null, (file, res) => {
                     try {
@@ -107,7 +109,7 @@ const TopPanelNote = GObject.registerClass(
         }
 
         _clearStorage() {
-            let file = Gio.File.new_for_path(cacheFilePath);
+            let file = Gio.File.new_for_path(this._getCacheFilePath());
             if (file.query_exists(null)) {
                 file.delete(null);
             }
