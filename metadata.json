@@ -3,6 +3,5 @@
   "name": "Top Panel Note",
   "description": "A GNOME extension to display static notes in the top panel.",
   "shell-version": ["45", "46"],
-  "url": "https://github.com/sainathmurali/top-panel-note.git",
-  "session-modes": ["user"],
+  "url": "https://github.com/sainathmurali/top-panel-note.git"
 }
