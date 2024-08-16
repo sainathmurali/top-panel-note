@@ -24,6 +24,9 @@ The Top Panel Note extension allows you to quickly add and view a static note fr
   - Click the extension icon in the top panel.
   - Click the clear button to remove the note.
 
+- **Tip**
+  - If you want to format the note properly, you can edit the text file containing the information (~/.cache/top_panel_note_cache.txt).
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on the repository.
