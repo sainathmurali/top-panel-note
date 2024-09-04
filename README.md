@@ -26,6 +26,7 @@ The Top Panel Note extension allows you to quickly add and view a static note fr
 
 - **Tip**
   - If you want to format the note properly, you can edit the text file containing the information (~/.cache/top_panel_note_cache.txt).
+  - Then press Alt+F2, type 'r' and press enter↵ to restart the gnome-shell to take effects.
 
 ## Contributing
 
