@@ -17,12 +17,13 @@ The Top Panel Note extension allows you to quickly add and view a static note fr
 
 - **Adding a Note:**
   - Click the extension icon in the top panel.
-  - Enter your note in the input box that appears and press Enter.
+  - Enter your note in the panel that appears.
   - Your note will be displayed in the top panel.
 
-- **Clearing a Note:**
+- **Editing a Note:**
   - Click the extension icon in the top panel.
-  - Click the clear button to remove the note.
+  - Edit your previous note in the panel that appears.
+
 
 - **Tip**
   - If you want to format the note properly, you can edit the text file containing the information (~/.cache/top_panel_note_cache.txt).
