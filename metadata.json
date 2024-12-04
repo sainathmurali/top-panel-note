@@ -2,6 +2,6 @@
   "uuid": "topPanelNote@sainathmurali.github.io",
   "name": "Top Panel Note",
   "description": "A GNOME extension to display static notes in the top panel.",
-  "shell-version": ["45", "46"],
+  "shell-version": ["45", "46","47"],
   "url": "https://github.com/sainathmurali/top-panel-note.git"
 }
