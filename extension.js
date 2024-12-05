@@ -5,8 +5,6 @@ import GLib from 'gi://GLib';
 import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 import Cogl from 'gi://Cogl';
-import Gtk from 'gi://Gtk';
-import Gdk from 'gi://Gdk';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -48,11 +46,7 @@ const TopPanelNote = GObject.registerClass(
 
             // Enable clipboard paste functionality
             this._entry.connect('key-press-event', (actor, event) => {
-                log(`Key pressed: key_symbol=${event.get_key_symbol()} state=${event.get_state()}`);
-                
-                // Check for Ctrl+V (paste) event
                 if (event.get_key_symbol() === Clutter.KEY_v && event.get_state() & Clutter.ModifierType.CONTROL_MASK) {
-                    log("Detected Ctrl+V (paste)");
                     this._pasteFromClipboard();
                     return Clutter.EVENT_STOP;
                 }
@@ -64,15 +58,15 @@ const TopPanelNote = GObject.registerClass(
             layout.add_child(this._entry);
 
             let monitor = Main.layoutManager.primaryMonitor;
-            let maxWidth = monitor.width * 0.2;
-            let maxHeight = monitor.height * 0.35;
+            this._width = monitor.width * 0.2;
+            this._height = monitor.height * 0.35;
 
             // Create a St.ScrollView to add a scrollbar
             this._scrollView = new St.ScrollView({
                 hscrollbar_policy: St.PolicyType.NEVER,
                 vscrollbar_policy: St.PolicyType.AUTOMATIC,
-                width: maxWidth,  // Adjust the width if needed
-                height: maxHeight, // Adjust the height if needed
+                width: this._width,  // Initial width
+                height: this._height, // Initial height
             });
             this._scrollView.add_child(layout);
 
@@ -82,7 +76,7 @@ const TopPanelNote = GObject.registerClass(
             this.menu.addMenuItem(this._noteMenuItem);
 
             // Add signal to allow focus on click anywhere in the text area
-            layout.connect('button-press-event', (actor, event) => {
+            layout.connect('button-press-event', () => {
                 this._entry.grab_key_focus(); // Focus the Clutter.Text input
                 return Clutter.EVENT_STOP;    // Prevent event propagation
             });
@@ -105,6 +99,43 @@ const TopPanelNote = GObject.registerClass(
 
             // Load existing note from storage
             this._loadNoteFromStorage();
+
+            // Add resize functionality via the bottom-right corner
+            this._resizeHandle = new St.Widget({
+                reactive: true,
+                can_focus: true,
+                track_hover: true,
+                style_class: 'resize-corner',
+            });
+            this._resizeHandle.set_style(`
+                cursor: se-resize;
+                width: 16px;
+                height: 16px;
+                background: transparent;
+                position: absolute;
+                bottom: 0;
+                right: 0;
+            `);
+            this._noteMenuItem.actor.add_child(this._resizeHandle);
+
+            // Enable resizing functionality
+            this._resizeHandle.connect('button-press-event', () => {
+                this._resizing = true;
+            });
+
+            this._resizeHandle.connect('motion-event', (actor, event) => {
+                if (this._resizing) {
+                    let [mouseX, mouseY] = global.get_pointer();
+                    this._width = Math.max(200, mouseX - this._scrollView.x); // Minimum width 200px
+                    this._height = Math.max(100, mouseY - this._scrollView.y); // Minimum height 100px
+                    this._scrollView.set_width(this._width);
+                    this._scrollView.set_height(this._height);
+                }
+            });
+
+            this._resizeHandle.connect('button-release-event', () => {
+                this._resizing = false;
+            });
         }
 
         _getCacheFilePath() {
@@ -112,7 +143,6 @@ const TopPanelNote = GObject.registerClass(
         }
 
         setNoteText(text) {
-            log(`Setting note text: ${text}`);
             this._noteText = text.trim();
             this._entry.set_text(this._noteText);
             this._storeNoteInStorage(this._noteText);
@@ -128,7 +158,6 @@ const TopPanelNote = GObject.registerClass(
                 let textBytes = new TextEncoder().encode(text);
                 outputStream.write_all(textBytes, null);
                 outputStream.close(null);
-                log("Note text stored successfully.");
             } catch (e) {
                 logError(e, 'Failed to store note in cache');
             }
@@ -146,7 +175,6 @@ const TopPanelNote = GObject.registerClass(
                         let text = decoder.decode(content).trim();
                         this._noteText = text;
                         this._entry.set_text(this._noteText);
-                        log("Note text loaded successfully.");
                     } else {
                         this._noteText = '';
                         this._entry.set_text(_('Enter your note'));
@@ -161,33 +189,21 @@ const TopPanelNote = GObject.registerClass(
         }
 
         _pasteFromClipboard() {
-            log("Attempting to paste from clipboard...");
-            
-            // Access the clipboard using St.Clipboard
             let clipboard = St.Clipboard.get_default();
-            
-            // Request the clipboard text, with a callback function
             clipboard.get_text(St.ClipboardType.CLIPBOARD, (clipboard, text) => {
                 if (text) {
-                    log(`Clipboard content: ${text}`);
-                    
-                    // Insert the clipboard text into the entry
                     let currentText = this._entry.get_text();
                     let cursorPos = this._entry.get_cursor_position();
-                    log(`Current text: ${currentText}`);
-                    log(`Cursor position: ${cursorPos}`);
-                    
                     let beforeCursor = currentText.slice(0, cursorPos);
                     let afterCursor = currentText.slice(cursorPos);
                     let newText = beforeCursor + text + afterCursor;
                     this._entry.set_text(newText);
-                } else {
-                    log("Clipboard is empty or failed to retrieve text.");
                 }
             });
         }
     }
 );
+
 
 export default class TopPanelNoteExtension extends Extension {
     constructor(metadata) {

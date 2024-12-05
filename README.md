@@ -24,6 +24,8 @@ The Top Panel Note extension allows you to quickly add and view a static note fr
   - Click the extension icon in the top panel.
   - Edit your previous note in the panel that appears.
 
+- **Resize the window:**
+  - Click and drag the empty space right to the scrollbar to resize the window.
 
 - **Tip**
   - If you want to format the note properly, you can edit the text file containing the information (~/.cache/top_panel_note_cache.txt).
