@@ -40,8 +40,12 @@ const TopPanelNote = GObject.registerClass(
             });
 
             // Set color using Cogl.Color
-            let color = new Cogl.Color();
-            color.init_from_4f(1, 1, 1, 1); // White color in normalized RGBA
+            //let color = new Cogl.Color();
+            //color.init_from_4f(1, 1, 1, 1); // White color in normalized RGBA
+            //this._entry.set_color(color);
+ 
+            // Set color using Clutter.Color
+            let color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 }); // White color in 8-bit RGBA
             this._entry.set_color(color);
 
             // Enable clipboard paste functionality
