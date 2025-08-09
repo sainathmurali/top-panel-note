@@ -39,14 +39,19 @@ const TopPanelNote = GObject.registerClass(
                 reactive: true,
             });
 
-            // Set color using Cogl.Color
-            //let color = new Cogl.Color();
-            //color.init_from_4f(1, 1, 1, 1); // White color in normalized RGBA
-            //this._entry.set_color(color);
- 
-            // Set color using Clutter.Color
-            let color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 }); // White color in 8-bit RGBA
+            // --- UNIVERSAL COLOR FIX ---
+            // This block checks which color API is available and uses it.
+            let color;
+            if (Clutter.Color) {
+                // For older GNOME versions (like Ubuntu)
+                color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 });
+            } else {
+                // For newer GNOME versions (like Fedora)
+                color = new Cogl.Color();
+                color.init_from_4f(1, 1, 1, 1);
+            }
             this._entry.set_color(color);
+            // --- END OF FIX ---
 
             // Enable clipboard paste functionality
             this._entry.connect('key-press-event', (actor, event) => {
@@ -65,14 +70,14 @@ const TopPanelNote = GObject.registerClass(
             this._width = monitor.width * 0.2;
             this._height = monitor.height * 0.35;
 
-            // Create a St.ScrollView to add a scrollbar
             this._scrollView = new St.ScrollView({
                 hscrollbar_policy: St.PolicyType.NEVER,
-                vscrollbar_policy: St.PolicyType.AUTOMATIC,
+                vscrollbar_policy: St.PolicyType.ALWAYS, // Always show the vertical scrollbar
                 width: this._width,  // Initial width
                 height: this._height, // Initial height
             });
             this._scrollView.add_child(layout);
+
 
             // Create a PopupMenuItem and add the scroll view
             this._noteMenuItem = new PopupMenu.PopupMenuItem('');
@@ -122,7 +127,7 @@ const TopPanelNote = GObject.registerClass(
             `);
             this._noteMenuItem.actor.add_child(this._resizeHandle);
 
-            // Enable resizing functionality
+            // Enable resizing functionality (Original implementation)
             this._resizeHandle.connect('button-press-event', () => {
                 this._resizing = true;
             });
