@@ -41,17 +41,6 @@ const TopPanelNote = GObject.registerClass(
             const color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 });
             this._entry.set_color(color);
 
-            // Enable clipboard paste functionality (Ctrl+V)
-            this._entry.connect('key-press-event', (actor, event) => {
-                const symbol = event.get_key_symbol();
-                const state = event.get_state();
-                if (symbol === Clutter.KEY_v && (state & Clutter.ModifierType.CONTROL_MASK)) {
-                    this._pasteFromClipboard();
-                    return true;
-                }
-                return false;
-            });
-
             // Create a St.BoxLayout to hold the Clutter.Text
             const layout = new St.BoxLayout({
                 vertical: true,
@@ -207,20 +196,6 @@ const TopPanelNote = GObject.registerClass(
             } catch (e) {
                 console.error('Failed to load note from cache', e);
             }
-        }
-
-        _pasteFromClipboard() {
-            let clipboard = St.Clipboard.get_default();
-            clipboard.get_text(St.ClipboardType.CLIPBOARD, (_clipboard, text) => {
-                if (text) {
-                    let currentText = this._entry.get_text();
-                    let cursorPos = this._entry.get_cursor_position();
-                    let beforeCursor = currentText.slice(0, cursorPos);
-                    let afterCursor = currentText.slice(cursorPos);
-                    let newText = beforeCursor + text + afterCursor;
-                    this._entry.set_text(newText);
-                }
-            });
         }
     }
 );
