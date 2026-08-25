@@ -4,7 +4,6 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
-import Cogl from 'gi://Cogl';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -39,55 +38,49 @@ const TopPanelNote = GObject.registerClass(
                 reactive: true,
             });
 
-            // --- UNIVERSAL COLOR FIX ---
-            // This block checks which color API is available and uses it.
-            let color;
-            if (Clutter.Color) {
-                // For older GNOME versions (like Ubuntu)
-                color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 });
-            } else {
-                // For newer GNOME versions (like Fedora)
-                color = new Cogl.Color();
-                color.init_from_4f(1, 1, 1, 1);
-            }
+            const color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 });
             this._entry.set_color(color);
-            // --- END OF FIX ---
 
-            // Enable clipboard paste functionality
+            // Enable clipboard paste functionality (Ctrl+V)
             this._entry.connect('key-press-event', (actor, event) => {
-                if (event.get_key_symbol() === Clutter.KEY_v && event.get_state() & Clutter.ModifierType.CONTROL_MASK) {
+                const symbol = event.get_key_symbol();
+                const state = event.get_state();
+                if (symbol === Clutter.KEY_v && (state & Clutter.ModifierType.CONTROL_MASK)) {
                     this._pasteFromClipboard();
-                    return Clutter.EVENT_STOP;
+                    return true;
                 }
-                return Clutter.EVENT_PROPAGATE;
+                return false;
             });
 
             // Create a St.BoxLayout to hold the Clutter.Text
-            const layout = new St.BoxLayout();
+            const layout = new St.BoxLayout({
+                vertical: true,
+                x_expand: true,
+                y_expand: true,
+            });
             layout.add_child(this._entry);
 
             let monitor = Main.layoutManager.primaryMonitor;
-            this._width = monitor.width * 0.2;
-            this._height = monitor.height * 0.35;
+            this._width = monitor ? monitor.width * 0.2 : 300;
+            this._height = monitor ? monitor.height * 0.35 : 200;
 
             this._scrollView = new St.ScrollView({
                 hscrollbar_policy: St.PolicyType.NEVER,
-                vscrollbar_policy: St.PolicyType.ALWAYS, // Always show the vertical scrollbar
-                width: this._width,  // Initial width
-                height: this._height, // Initial height
+                vscrollbar_policy: St.PolicyType.ALWAYS,
+                width: this._width,
+                height: this._height,
             });
             this._scrollView.add_child(layout);
 
-
             // Create a PopupMenuItem and add the scroll view
             this._noteMenuItem = new PopupMenu.PopupMenuItem('');
-            this._noteMenuItem.actor.add_child(this._scrollView);
+            this._noteMenuItem.add_child(this._scrollView);
             this.menu.addMenuItem(this._noteMenuItem);
 
             // Add signal to allow focus on click anywhere in the text area
             layout.connect('button-press-event', () => {
-                this._entry.grab_key_focus(); // Focus the Clutter.Text input
-                return Clutter.EVENT_STOP;    // Prevent event propagation
+                this._entry.grab_key_focus();
+                return true;
             });
 
             // Handle key focus events to control placeholder behavior
@@ -109,7 +102,7 @@ const TopPanelNote = GObject.registerClass(
             // Load existing note from storage
             this._loadNoteFromStorage();
 
-            // Add resize functionality via the bottom-right corner
+            // Add resize handle via bottom-right corner
             this._resizeHandle = new St.Widget({
                 reactive: true,
                 can_focus: true,
@@ -117,7 +110,6 @@ const TopPanelNote = GObject.registerClass(
                 style_class: 'resize-corner',
             });
             this._resizeHandle.set_style(`
-                cursor: se-resize;
                 width: 16px;
                 height: 16px;
                 background: transparent;
@@ -125,25 +117,28 @@ const TopPanelNote = GObject.registerClass(
                 bottom: 0;
                 right: 0;
             `);
-            this._noteMenuItem.actor.add_child(this._resizeHandle);
 
-            // Enable resizing functionality (Original implementation)
+            this._noteMenuItem.add_child(this._resizeHandle);
+
             this._resizeHandle.connect('button-press-event', () => {
                 this._resizing = true;
+                return true;
             });
 
-            this._resizeHandle.connect('motion-event', (actor, event) => {
+            this._resizeHandle.connect('motion-event', () => {
                 if (this._resizing) {
                     let [mouseX, mouseY] = global.get_pointer();
-                    this._width = Math.max(200, mouseX - this._scrollView.x); // Minimum width 200px
-                    this._height = Math.max(100, mouseY - this._scrollView.y); // Minimum height 100px
+                    this._width = Math.max(200, mouseX - this._scrollView.x);
+                    this._height = Math.max(100, mouseY - this._scrollView.y);
                     this._scrollView.set_width(this._width);
                     this._scrollView.set_height(this._height);
                 }
+                return false;
             });
 
             this._resizeHandle.connect('button-release-event', () => {
                 this._resizing = false;
+                return true;
             });
         }
 
@@ -162,13 +157,24 @@ const TopPanelNote = GObject.registerClass(
 
             try {
                 let file = Gio.File.new_for_path(filePath);
-                let outputStream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
-
                 let textBytes = new TextEncoder().encode(text);
-                outputStream.write_all(textBytes, null);
-                outputStream.close(null);
+                file.replace_async(null, false, Gio.FileCreateFlags.NONE, GLib.PRIORITY_DEFAULT, null, (src, res) => {
+                    try {
+                        let stream = src.replace_finish(res);
+                        stream.write_all_async(textBytes, GLib.PRIORITY_DEFAULT, null, (s, wRes) => {
+                            try {
+                                s.write_all_finish(wRes);
+                                s.close_async(GLib.PRIORITY_DEFAULT, null, null);
+                            } catch (e) {
+                                console.error('Failed to complete write_all_async', e);
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Failed to replace file async', e);
+                    }
+                });
             } catch (e) {
-                logError(e, 'Failed to store note in cache');
+                console.error('Failed to store note in cache', e);
             }
         }
 
@@ -177,29 +183,35 @@ const TopPanelNote = GObject.registerClass(
 
             try {
                 let file = Gio.File.new_for_path(filePath);
-                if (file.query_exists(null)) {
-                    let [success, content] = file.load_contents(null);
-                    if (success) {
-                        let decoder = new TextDecoder();
-                        let text = decoder.decode(content).trim();
-                        this._noteText = text;
-                        this._entry.set_text(this._noteText);
-                    } else {
+                file.load_contents_async(null, (src, res) => {
+                    try {
+                        let [success, content] = src.load_contents_finish(res);
+                        if (success && content) {
+                            let text = new TextDecoder().decode(content).trim();
+                            if (text !== '') {
+                                this._noteText = text;
+                                this._entry.set_text(this._noteText);
+                            } else {
+                                this._noteText = '';
+                                this._entry.set_text(_('Enter your note'));
+                            }
+                        } else {
+                            this._noteText = '';
+                            this._entry.set_text(_('Enter your note'));
+                        }
+                    } catch (e) {
                         this._noteText = '';
                         this._entry.set_text(_('Enter your note'));
                     }
-                } else {
-                    this._noteText = '';
-                    this._entry.set_text(_('Enter your note'));
-                }
+                });
             } catch (e) {
-                logError(e, 'Failed to load note from cache');
+                console.error('Failed to load note from cache', e);
             }
         }
 
         _pasteFromClipboard() {
             let clipboard = St.Clipboard.get_default();
-            clipboard.get_text(St.ClipboardType.CLIPBOARD, (clipboard, text) => {
+            clipboard.get_text(St.ClipboardType.CLIPBOARD, (_clipboard, text) => {
                 if (text) {
                     let currentText = this._entry.get_text();
                     let cursorPos = this._entry.get_cursor_position();
