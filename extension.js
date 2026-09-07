@@ -35,6 +35,8 @@ const TopPanelNote = GObject.registerClass(
                 line_wrap: true,
                 line_wrap_mode: Pango.WrapMode.WORD_CHAR,
                 reactive: true,
+                x_expand: true,
+                y_expand: true,
             });
 
             // Clipboard paste handling (Ctrl+V)
@@ -84,11 +86,18 @@ const TopPanelNote = GObject.registerClass(
             this._noteMenuItem.add_child(this._scrollView);
             this.menu.addMenuItem(this._noteMenuItem);
 
-            // Add signal to allow focus on click anywhere in the text area
-            layout.connect('button-press-event', () => {
+            // Focus and position cursor at end of text when clicking anywhere in empty space
+            const focusAndPositionCursor = () => {
                 this._entry.grab_key_focus();
+                if (this._entry.get_text() === _('Enter your note')) {
+                    this._entry.set_text('');
+                }
+                this._entry.set_cursor_position(-1);
                 return true;
-            });
+            };
+
+            layout.connect('button-press-event', focusAndPositionCursor);
+            this._scrollView.connect('button-press-event', focusAndPositionCursor);
 
             // Handle key focus events to control placeholder behavior
             this._entry.connect('key-focus-in', () => {
