@@ -38,23 +38,14 @@ const TopPanelNote = GObject.registerClass(
                 reactive: true,
             });
 
-            // Handle keyboard shortcuts for Copy, Paste, Cut, and Select All
+            // Enable clipboard paste functionality (Ctrl+V) for Wayland & X11
             this._entry.connect('key-press-event', (actor, event) => {
                 const symbol = event.get_key_symbol();
                 const state = event.get_state();
                 const isCtrl = (state & Clutter.ModifierType.CONTROL_MASK) !== 0;
 
                 if (isCtrl && symbol === Clutter.KEY_v) {
-                    this._entry.paste_clipboard();
-                    return true;
-                } else if (isCtrl && symbol === Clutter.KEY_c) {
-                    this._entry.copy_clipboard();
-                    return true;
-                } else if (isCtrl && symbol === Clutter.KEY_x) {
-                    this._entry.cut_clipboard();
-                    return true;
-                } else if (isCtrl && symbol === Clutter.KEY_a) {
-                    this._entry.set_selection(0, -1);
+                    this._pasteFromClipboard();
                     return true;
                 }
                 return false;
@@ -215,6 +206,21 @@ const TopPanelNote = GObject.registerClass(
             } catch (e) {
                 console.error('Failed to load note from cache', e);
             }
+        }
+
+        _pasteFromClipboard() {
+            const clipboard = St.Clipboard.get_default();
+            clipboard.get_text(St.ClipboardType.CLIPBOARD, (_clipboard, text) => {
+                if (text) {
+                    let currentText = this._entry.get_text();
+                    let cursorPos = this._entry.get_cursor_position();
+                    let beforeCursor = currentText.slice(0, cursorPos);
+                    let afterCursor = currentText.slice(cursorPos);
+                    let newText = beforeCursor + text + afterCursor;
+                    this._entry.set_text(newText);
+                    this._entry.set_cursor_position(cursorPos + text.length);
+                }
+            });
         }
     }
 );
