@@ -34,23 +34,31 @@ const TopPanelNote = GObject.registerClass(
                 single_line_mode: false,
                 line_wrap: true,
                 line_wrap_mode: Pango.WrapMode.WORD_CHAR,
-                text: _('Enter your note'),
                 reactive: true,
             });
 
-            // Enable clipboard paste functionality (Ctrl+V) for Wayland & X11
+            // Clipboard paste handling (Ctrl+V)
             this._entry.connect('key-press-event', (actor, event) => {
                 const symbol = event.get_key_symbol();
                 const state = event.get_state();
                 const isCtrl = (state & Clutter.ModifierType.CONTROL_MASK) !== 0;
 
-                if (isCtrl && symbol === Clutter.KEY_v) {
-                    this._pasteFromClipboard();
+                if (isCtrl && (symbol === Clutter.KEY_v || symbol === Clutter.KEY_V)) {
+                    const clipboard = St.Clipboard.get_default();
+                    clipboard.get_text(St.ClipboardType.CLIPBOARD, (_clipboard, text) => {
+                        if (text) {
+                            const currentText = this._entry.get_text();
+                            const cursorPos = this._entry.get_cursor_position();
+                            const beforeCursor = currentText.slice(0, cursorPos);
+                            const afterCursor = currentText.slice(cursorPos);
+                            this._entry.set_text(beforeCursor + text + afterCursor);
+                            this._entry.set_cursor_position(cursorPos + text.length);
+                        }
+                    });
                     return true;
                 }
                 return false;
             });
-
             // Create a St.BoxLayout to hold the Clutter.Text
             const layout = new St.BoxLayout({
                 vertical: true,
@@ -206,21 +214,6 @@ const TopPanelNote = GObject.registerClass(
             } catch (e) {
                 console.error('Failed to load note from cache', e);
             }
-        }
-
-        _pasteFromClipboard() {
-            const clipboard = St.Clipboard.get_default();
-            clipboard.get_text(St.ClipboardType.CLIPBOARD, (_clipboard, text) => {
-                if (text) {
-                    let currentText = this._entry.get_text();
-                    let cursorPos = this._entry.get_cursor_position();
-                    let beforeCursor = currentText.slice(0, cursorPos);
-                    let afterCursor = currentText.slice(cursorPos);
-                    let newText = beforeCursor + text + afterCursor;
-                    this._entry.set_text(newText);
-                    this._entry.set_cursor_position(cursorPos + text.length);
-                }
-            });
         }
     }
 );
