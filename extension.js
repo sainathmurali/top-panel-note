@@ -174,21 +174,20 @@ const TopPanelNote = GObject.registerClass(
             try {
                 let file = Gio.File.new_for_path(filePath);
                 let textBytes = new TextEncoder().encode(text);
-                file.replace_async(null, false, Gio.FileCreateFlags.NONE, GLib.PRIORITY_DEFAULT, null, (src, res) => {
-                    try {
-                        let stream = src.replace_finish(res);
-                        stream.write_all_async(textBytes, GLib.PRIORITY_DEFAULT, null, (s, wRes) => {
-                            try {
-                                s.write_all_finish(wRes);
-                                s.close_async(GLib.PRIORITY_DEFAULT, null, null);
-                            } catch (e) {
-                                console.error('Failed to complete write_all_async', e);
-                            }
-                        });
-                    } catch (e) {
-                        console.error('Failed to replace file async', e);
+                file.replace_contents_bytes_async(
+                    GLib.Bytes.new(textBytes),
+                    null,
+                    false,
+                    Gio.FileCreateFlags.NONE,
+                    null,
+                    (src, res) => {
+                        try {
+                            src.replace_contents_finish(res);
+                        } catch (e) {
+                            console.error('Failed to finish replace_contents_bytes_async', e);
+                        }
                     }
-                });
+                );
             } catch (e) {
                 console.error('Failed to store note in cache', e);
             }
