@@ -38,7 +38,27 @@ const TopPanelNote = GObject.registerClass(
                 reactive: true,
             });
 
+            // Handle keyboard shortcuts for Copy, Paste, Cut, and Select All
+            this._entry.connect('key-press-event', (actor, event) => {
+                const symbol = event.get_key_symbol();
+                const state = event.get_state();
+                const isCtrl = (state & Clutter.ModifierType.CONTROL_MASK) !== 0;
 
+                if (isCtrl && symbol === Clutter.KEY_v) {
+                    this._entry.paste_clipboard();
+                    return true;
+                } else if (isCtrl && symbol === Clutter.KEY_c) {
+                    this._entry.copy_clipboard();
+                    return true;
+                } else if (isCtrl && symbol === Clutter.KEY_x) {
+                    this._entry.cut_clipboard();
+                    return true;
+                } else if (isCtrl && symbol === Clutter.KEY_a) {
+                    this._entry.set_selection(0, -1);
+                    return true;
+                }
+                return false;
+            });
 
             // Create a St.BoxLayout to hold the Clutter.Text
             const layout = new St.BoxLayout({
