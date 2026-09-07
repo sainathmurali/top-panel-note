@@ -38,8 +38,7 @@ const TopPanelNote = GObject.registerClass(
                 reactive: true,
             });
 
-            const color = new Clutter.Color({ red: 255, green: 255, blue: 255, alpha: 255 });
-            this._entry.set_color(color);
+
 
             // Create a St.BoxLayout to hold the Clutter.Text
             const layout = new St.BoxLayout({
